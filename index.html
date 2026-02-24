@@ -60,28 +60,8 @@
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        /* --- THE COLOR FIX --- */
-        /* Base (Inactive) Styles - Using specific class names to avoid Tailwind overlap */
-        .dot-state-incompatible-base {
-            background-color: #fee2e2 !important; /* Very Light Red */
-        }
-
-        .dot-state-compatible-base {
-            background-color: #f1f5f9 !important; /* Neutral Light Grey/Slate */
-        }
-
-        /* Active (Highlighted Column) Styles */
-        .dot-state-incompatible-active {
-            background-color: #b91c1c !important; /* Deep "Emergency" Red #b91c1c */
-            z-index: 20;
-        }
-
-        .dot-state-compatible-active {
-            background-color: #10b981 !important; /* Vivid Emerald Green */
-            z-index: 20;
+            transition: all 0.3s ease;
+            display: block;
         }
 
         .mono { font-family: 'JetBrains Mono', monospace; }
@@ -113,7 +93,7 @@
             </div>
         </div>
         <div class="hidden md:flex gap-6 text-sm font-bold uppercase tracking-wider">
-            <div class="flex items-center gap-2 text-slate-500"><span class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></span> Serology Matrix Active</div>
+            <div class="flex items-center gap-2 text-slate-500"><span class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></span> Terminal Ready</div>
         </div>
     </nav>
 
@@ -190,6 +170,7 @@
     </main>
 
     <script>
+        // CORE BIOLOGICAL CONSTANTS
         const bloodData = {
             'O-': { give: ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'], receive: ['O-'], antigens: 'no (zero)', antibodies: 'Anti-A, Anti-B, and Anti-Rh' },
             'O+': { give: ['O+', 'A+', 'B+', 'AB+'], receive: ['O-', 'O+'], antigens: 'Rh', antibodies: 'Anti-A and Anti-B' },
@@ -202,6 +183,14 @@
         };
 
         const types = Object.keys(bloodData);
+        
+        // COLOR HEX CODES (Medical Standards)
+        const COLORS = {
+            RED_DEEP: '#b91c1c',   // Incompatible (Selected)
+            RED_LIGHT: '#fee2e2',  // Incompatible (Base)
+            GREEN_VIVID: '#10b981', // Compatible (Selected)
+            SLATE_LIGHT: '#f1f5f9'  // Compatible (Base)
+        };
 
         function init() {
             renderControls();
@@ -264,11 +253,10 @@
                 const row = document.createElement('tr');
                 row.innerHTML = `<td class="font-black text-slate-700 pr-6 py-3 border-b border-slate-50">${recpt}</td>`;
                 types.forEach(donor => {
-                    const isOk = bloodData[donor].give.includes(recpt);
                     row.innerHTML += `
                         <td class="text-center p-0 border-b border-slate-50">
                             <div id="cell-${safe(donor)}-${safe(recpt)}" class="flex items-center justify-center h-12">
-                                <div class="matrix-dot ${isOk ? 'dot-state-compatible-base' : 'dot-state-incompatible-base'}"></div>
+                                <div class="matrix-dot"></div>
                             </div>
                         </td>
                     `;
@@ -280,43 +268,40 @@
         function updateMatrix(selectedDonor) {
             const safeSel = safe(selectedDonor);
             
-            // 1. Reset all dots to their base state
-            document.querySelectorAll('.matrix-dot').forEach(d => {
-                d.style.transform = 'scale(1)';
-                d.style.boxShadow = 'none';
-                
-                // Inspect parent ID to determine its biological identity
-                const parentId = d.parentElement.id; 
-                const [_, donorPart, recptPart] = parentId.split('-');
-                
-                const dKey = types.find(t => safe(t) === donorPart);
-                const rKey = types.find(t => safe(t) === recptPart);
-                const isOk = bloodData[dKey].give.includes(rKey);
+            // Iterate through every cell in the matrix
+            types.forEach(donor => {
+                const safeDonor = safe(donor);
+                const isSelectedColumn = (safeDonor === safeSel);
 
-                // Reapply base classes exclusively
-                d.className = 'matrix-dot'; // Wipe custom states
-                d.classList.add(isOk ? 'dot-state-compatible-base' : 'dot-state-incompatible-base');
-            });
+                types.forEach(recpt => {
+                    const dot = document.querySelector(`#cell-${safeDonor}-${safe(recpt)} .matrix-dot`);
+                    if (!dot) return;
 
-            // 2. Highlight ONLY the dots in the selected donor's column
-            types.forEach(recpt => {
-                const dot = document.querySelector(`#cell-${safeSel}-${safe(recpt)} .matrix-dot`);
-                if (dot) {
-                    dot.style.transform = 'scale(2.2)';
-                    
-                    const isOk = bloodData[selectedDonor].give.includes(recpt);
-                    
-                    // Switch from base to active class
-                    if (isOk) {
-                        dot.classList.remove('dot-state-compatible-base');
-                        dot.classList.add('dot-state-compatible-active');
-                        dot.style.boxShadow = '0 0 15px rgba(16, 185, 129, 0.4)';
+                    const isCompatible = bloodData[donor].give.includes(recpt);
+
+                    // Reset common properties
+                    dot.style.transform = isSelectedColumn ? 'scale(2.2)' : 'scale(1)';
+                    dot.style.boxShadow = 'none';
+
+                    // DIRECT INLINE STYLE INJECTION - NO CLASSES
+                    if (isSelectedColumn) {
+                        // Highlighted Column
+                        if (isCompatible) {
+                            dot.style.backgroundColor = COLORS.GREEN_VIVID;
+                            dot.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.4)';
+                        } else {
+                            dot.style.backgroundColor = COLORS.RED_DEEP; // THIS IS THE SPECIFIC RED
+                            dot.style.boxShadow = '0 0 10px rgba(185, 28, 28, 0.4)';
+                        }
                     } else {
-                        dot.classList.remove('dot-state-incompatible-base');
-                        dot.classList.add('dot-state-incompatible-active');
-                        dot.style.boxShadow = '0 0 15px rgba(185, 28, 28, 0.4)';
+                        // Background (Unselected) Columns
+                        if (isCompatible) {
+                            dot.style.backgroundColor = COLORS.SLATE_LIGHT;
+                        } else {
+                            dot.style.backgroundColor = COLORS.RED_LIGHT;
+                        }
                     }
-                }
+                });
             });
         }
 
