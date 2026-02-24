@@ -57,19 +57,24 @@
         }
 
         .matrix-dot {
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        /* Hard-coded deep red for incompatible dots */
-        .dot-incompatible {
-            background-color: #b91c1c !important; /* Deep Red 700 */
+        /* DEFAULT STATE (Inactive Columns) */
+        .dot-incompatible-base {
+            background-color: #fee2e2 !important; /* Very Light Red 100 */
         }
 
         .dot-compatible-base {
-            background-color: #d1fae5 !important; /* Emerald 100 */
+            background-color: #f1f5f9 !important; /* Very Light Slate 100 */
+        }
+
+        /* ACTIVE STATE (Selected Column) */
+        .dot-incompatible-active {
+            background-color: #b91c1c !important; /* Deep Red 700 */
         }
 
         .dot-compatible-active {
@@ -105,7 +110,7 @@
             </div>
         </div>
         <div class="hidden md:flex gap-6 text-sm font-bold uppercase tracking-wider">
-            <div class="flex items-center gap-2 text-slate-500"><span class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></span> System Ready</div>
+            <div class="flex items-center gap-2 text-slate-500"><span class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></span> Analyzing Interactive Matrix</div>
         </div>
     </nav>
 
@@ -164,7 +169,7 @@
                     <h3 class="text-lg font-black text-slate-800 uppercase tracking-tighter">Compatibility Matrix</h3>
                     <div class="flex gap-6 text-xs font-bold uppercase text-slate-500">
                         <span class="flex items-center gap-2"><span class="w-3 h-3 bg-emerald-500 rounded-full"></span> Compatible</span>
-                        <span class="flex items-center gap-2"><span class="w-3 h-3 bg-red-700 rounded-full"></span> Incompatible</span>
+                        <span class="flex items-center gap-2"><span class="w-3 h-3 bg-red-700 rounded-full"></span> Reaction Risk</span>
                     </div>
                 </div>
                 <div class="overflow-x-auto">
@@ -259,7 +264,7 @@
                     row.innerHTML += `
                         <td class="text-center p-0 border-b border-slate-50">
                             <div id="cell-${safe(donor)}-${safe(recpt)}" class="flex items-center justify-center h-12">
-                                <div class="matrix-dot ${isOk ? 'dot-compatible-base' : 'dot-incompatible'}"></div>
+                                <div class="matrix-dot ${isOk ? 'dot-compatible-base' : 'dot-incompatible-base'}"></div>
                             </div>
                         </td>
                     `;
@@ -271,23 +276,41 @@
         function updateMatrix(selectedDonor) {
             const safeSel = safe(selectedDonor);
             
+            // First, reset all dots across the entire table to base/light states
             document.querySelectorAll('.matrix-dot').forEach(d => {
                 d.style.transform = 'scale(1)';
                 d.style.boxShadow = 'none';
-                if(d.classList.contains('dot-compatible-active')) {
-                    d.classList.remove('dot-compatible-active');
-                    d.classList.add('dot-compatible-base');
-                }
+                
+                // Determine if this cell is generally a compatible or incompatible cell
+                const parentId = d.parentElement.id; // e.g., cell-Apos-Bneg
+                const [_, donorPart, recptPart] = parentId.split('-');
+                
+                // We need to reverse the safe() to find the original keys
+                const dKey = types.find(t => safe(t) === donorPart);
+                const rKey = types.find(t => safe(t) === recptPart);
+                const isOk = bloodData[dKey].give.includes(rKey);
+
+                // Reset to BASE styles
+                d.classList.remove('dot-compatible-active', 'dot-incompatible-active');
+                d.classList.add(isOk ? 'dot-compatible-base' : 'dot-incompatible-base');
             });
 
+            // Now, highlight only the column of the selected donor
             types.forEach(recpt => {
                 const dot = document.querySelector(`#cell-${safeSel}-${safe(recpt)} .matrix-dot`);
                 if (dot) {
                     dot.style.transform = 'scale(2.2)';
-                    if (dot.classList.contains('dot-compatible-base')) {
+                    
+                    const isOk = bloodData[selectedDonor].give.includes(recpt);
+                    
+                    if (isOk) {
                         dot.classList.remove('dot-compatible-base');
                         dot.classList.add('dot-compatible-active');
-                        dot.style.boxShadow = '0 0 15px rgba(16, 185, 129, 0.5)';
+                        dot.style.boxShadow = '0 0 15px rgba(16, 185, 129, 0.4)';
+                    } else {
+                        dot.classList.remove('dot-incompatible-base');
+                        dot.classList.add('dot-incompatible-active');
+                        dot.style.boxShadow = '0 0 15px rgba(185, 28, 28, 0.4)';
                     }
                 }
             });
