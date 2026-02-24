@@ -8,18 +8,14 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
         
-        :root {
-            --medical-blue: #0f172a;
-            --blood-red: #dc2626;
-            --safety-green: #10b981;
-        }
-
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: #0f172a; 
             color: #f8fafc;
-            overflow-x: hidden;
             height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
         .glass-panel {
@@ -28,194 +24,135 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .mono { font-family: 'JetBrains Mono', monospace; }
-
         .blood-card {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s ease;
             border: 1px solid rgba(255, 255, 255, 0.05);
             background: rgba(51, 65, 85, 0.3);
+            cursor: pointer;
         }
 
         .blood-card:hover {
             background: rgba(51, 65, 85, 0.6);
-            transform: translateY(-2px);
-            border-color: rgba(220, 38, 38, 0.4);
+            border-color: rgba(239, 68, 68, 0.4);
         }
 
         .blood-card.active {
             background: #dc2626;
             border-color: #ef4444;
-            box-shadow: 0 0 20px rgba(220, 38, 38, 0.4);
+            box-shadow: 0 0 15px rgba(220, 38, 38, 0.4);
         }
 
-        .status-pill {
-            transition: all 0.4s ease;
-            width: 42px;
-            height: 42px;
+        .comp-box {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 12px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 0.875rem;
         }
 
         .matrix-dot {
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
             transition: all 0.3s ease;
         }
 
-        @keyframes scan {
-            0% { top: 0%; }
-            100% { top: 100%; }
-        }
-        .scanner-line {
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #ef4444, transparent);
-            position: absolute;
-            width: 100%;
-            z-index: 20;
-            animation: scan 3s linear infinite;
-            pointer-events: none;
-        }
-
-        /* Responsive height adjustments */
-        @media (min-height: 800px) {
-            .main-content { height: calc(100vh - 72px); }
-        }
+        .mono { font-family: 'JetBrains Mono', monospace; }
     </style>
 </head>
-<body class="flex flex-col">
+<body>
 
-    <!-- Top Navigation Bar -->
-    <nav class="border-b border-white/10 px-6 py-4 flex justify-between items-center bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
+    <!-- Header -->
+    <nav class="border-b border-white/10 px-6 py-3 flex justify-between items-center bg-slate-900/50 backdrop-blur-md">
         <div class="flex items-center gap-3">
-            <div class="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-red-900/20">B+</div>
-            <div>
-                <h1 class="text-lg font-extrabold tracking-tight">BIOLAB <span class="text-red-500 text-sm font-medium ml-1">v4.1</span></h1>
-                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Compatibility Analysis Console</p>
-            </div>
+            <div class="w-7 h-7 bg-red-600 rounded flex items-center justify-center font-bold text-white">B+</div>
+            <h1 class="text-lg font-extrabold tracking-tight">BIOLAB <span class="text-red-500 text-xs font-medium ml-1">v5.0</span></h1>
         </div>
-        <div class="flex gap-6 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-            <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Live Scanning</div>
-            <div class="hidden md:block">Grade 11 Biology Tool</div>
+        <div class="flex gap-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Terminal Active</div>
         </div>
     </nav>
 
-    <main class="flex-grow grid grid-cols-1 lg:grid-cols-12 main-content overflow-hidden">
+    <main class="flex-grow grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
         
-        <!-- Left: Sample Selection -->
+        <!-- Selection Sidebar -->
         <aside class="lg:col-span-2 border-r border-white/5 p-4 bg-slate-900/30 overflow-y-auto">
-            <label class="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em] block mb-4">Patient Input</label>
-            <div class="grid grid-cols-1 gap-2" id="bloodGrid">
-                <!-- Buttons injected here -->
-            </div>
+            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Select Blood Type</p>
+            <div class="grid grid-cols-1 gap-2" id="bloodGrid"></div>
         </aside>
 
-        <!-- Center: The Core Compatibility Engine -->
-        <section class="lg:col-span-8 p-6 flex flex-col gap-6 overflow-y-auto">
+        <!-- Main Workspace -->
+        <section class="lg:col-span-10 p-6 flex flex-col gap-6 overflow-y-auto">
             
-            <!-- Top Section: Scanner & Primary Compatibility -->
-            <div class="grid grid-cols-1 xl:grid-cols-4 gap-4 flex-shrink-0">
+            <!-- Result Dashboard -->
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 
-                <!-- Donor Column -->
-                <div class="xl:col-span-1 glass-panel rounded-2xl p-4 flex flex-col items-center">
-                    <h3 class="text-[9px] font-bold text-emerald-400 uppercase tracking-[0.2em] mb-4">Can Donate To</h3>
-                    <div id="giveToGrid" class="grid grid-cols-2 gap-2"></div>
-                </div>
-
-                <!-- Scanner Hero -->
-                <div class="xl:col-span-2 glass-panel rounded-3xl p-6 relative overflow-hidden border-white/10 flex flex-col justify-center min-h-[300px]">
-                    <div class="scanner-line"></div>
-                    <div class="flex flex-col items-center justify-center relative z-10 text-center">
-                        <div class="relative inline-block mb-4">
-                            <svg class="w-20 h-20 text-red-600 drop-shadow-[0_0_30px_rgba(220,38,38,0.3)]" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 21.5C12 21.5 4 15 4 10C4 5.58 7.58 2 12 2C16.42 2 20 5.58 20 10C20 15 12 21.5 12 21.5Z"/>
-                            </svg>
-                            <span id="centerType" class="absolute inset-0 flex items-center justify-center text-xl font-black text-white pt-1">A+</span>
-                        </div>
-                        <h2 class="text-xl font-extrabold tracking-tight" id="typeLabel">Type A-Positive</h2>
-                        <span id="typeStatus" class="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-6">Analyzing...</span>
-                        
-                        <!-- Mini bars -->
-                        <div class="w-full max-w-xs space-y-4">
-                            <div class="flex justify-between items-end mb-1">
-                                <span class="text-[9px] text-blue-400 font-bold uppercase">Antigens</span>
-                                <span class="text-[10px] mono text-blue-200" id="antigenList">-</span>
-                            </div>
-                            <div class="h-1 bg-slate-800 rounded-full overflow-hidden">
-                                <div id="antigenBar" class="h-full bg-blue-500 transition-all duration-700" style="width: 0%"></div>
-                            </div>
-                            <div class="flex justify-between items-end mb-1">
-                                <span class="text-[9px] text-orange-400 font-bold uppercase">Antibodies</span>
-                                <span class="text-[10px] mono text-orange-200" id="antibodyList">-</span>
-                            </div>
-                            <div class="h-1 bg-slate-800 rounded-full overflow-hidden">
-                                <div id="antibodyBar" class="h-full bg-orange-500 transition-all duration-700" style="width: 0%"></div>
-                            </div>
-                        </div>
+                <!-- Donation Results -->
+                <div class="glass-panel rounded-2xl p-6 border-emerald-500/20">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-widest">Donor Compatibility</h3>
+                        <span class="text-[10px] text-slate-500 font-bold uppercase">Can Give To</span>
+                    </div>
+                    <div id="giveToGrid" class="grid grid-cols-4 sm:grid-cols-8 gap-3"></div>
+                    <div class="mt-6 p-4 bg-emerald-500/5 rounded-xl border border-emerald-500/10">
+                        <p class="text-[11px] text-emerald-100/70 leading-relaxed">
+                            <strong class="text-emerald-400">Biological Logic:</strong> Type <span class="selected-text-name">...</span> has <span id="antigenDetail" class="text-emerald-400 font-bold">...</span> antigens. It can only be given to recipients whose immune system won't attack these markers.
+                        </p>
                     </div>
                 </div>
 
-                <!-- Recipient Column -->
-                <div class="xl:col-span-1 glass-panel rounded-2xl p-4 flex flex-col items-center">
-                    <h3 class="text-[9px] font-bold text-sky-400 uppercase tracking-[0.2em] mb-4">Can Receive From</h3>
-                    <div id="receiveFromGrid" class="grid grid-cols-2 gap-2"></div>
+                <!-- Recipient Results -->
+                <div class="glass-panel rounded-2xl p-6 border-sky-500/20">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xs font-bold text-sky-400 uppercase tracking-widest">Recipient Compatibility</h3>
+                        <span class="text-[10px] text-slate-500 font-bold uppercase">Can Receive From</span>
+                    </div>
+                    <div id="receiveFromGrid" class="grid grid-cols-4 sm:grid-cols-8 gap-3"></div>
+                    <div class="mt-6 p-4 bg-sky-500/5 rounded-xl border border-sky-500/10">
+                        <p class="text-[11px] text-sky-100/70 leading-relaxed">
+                            <strong class="text-sky-400">Biological Logic:</strong> This patient has <span id="antibodyDetail" class="text-sky-400 font-bold">...</span> antibodies in their plasma, which will attack any incoming blood containing the corresponding antigens.
+                        </p>
+                    </div>
                 </div>
 
             </div>
 
-            <!-- Bottom Section: The Master Matrix -->
-            <div class="glass-panel rounded-2xl p-5 border-white/5">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Global Cross-Match Matrix</h3>
+            <!-- Global Matrix -->
+            <div class="glass-panel rounded-2xl p-6 flex-grow">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest">Cross-Match Master Matrix</h3>
                     <div class="flex gap-4 text-[9px] mono text-slate-500">
-                        <span class="flex items-center gap-1"><span class="w-2 h-2 bg-emerald-500 rounded-full"></span> Safe</span>
-                        <span class="flex items-center gap-1"><span class="w-2 h-2 bg-red-900 rounded-full"></span> Clumping</span>
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 bg-emerald-500 rounded-full"></span> Compatible</span>
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 bg-red-900/40 rounded-full"></span> Reaction</span>
                     </div>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-[9px] mono text-slate-400 border-separate border-spacing-1">
+                    <table class="w-full text-[10px] mono text-slate-400 border-separate border-spacing-1">
                         <thead>
                             <tr id="matrixHeader">
-                                <th></th>
+                                <th class="text-left text-slate-600">RECIPIENT</th>
                                 <!-- Headers injected here -->
                             </tr>
                         </thead>
-                        <tbody id="matrixBody">
-                            <!-- Rows injected here -->
-                        </tbody>
+                        <tbody id="matrixBody"></tbody>
                     </table>
                 </div>
             </div>
         </section>
-
-        <!-- Right: Educational Context -->
-        <aside class="lg:col-span-2 border-l border-white/5 p-4 bg-slate-900/30 overflow-y-auto">
-            <h3 class="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">Lab Notes</h3>
-            <div class="space-y-4">
-                <div class="p-3 bg-slate-800/50 rounded-lg border border-white/5">
-                    <h4 class="text-xs font-bold text-blue-400 mb-2">Agglutination</h4>
-                    <p class="text-[10px] leading-relaxed text-slate-400">If a recipient has antibodies against a donor's antigens, the blood will clump. This is why O- can give to anyone; it has no antigens to "trip" the alarm.</p>
-                </div>
-                <div class="p-3 bg-slate-800/50 rounded-lg border border-white/5">
-                    <h4 class="text-xs font-bold text-orange-400 mb-2">Rh Factor</h4>
-                    <p class="text-[10px] leading-relaxed text-slate-400">Positive blood has the Rhesus protein. Negatives don't. A negative person's immune system will attack the Rh protein if they receive positive blood.</p>
-                </div>
-            </div>
-        </aside>
     </main>
 
     <script>
         const bloodData = {
-            'O-': { give: ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'], receive: ['O-'], antigens: 'None', antibodies: 'Anti-A, B, Rh', bars: [10, 95] },
-            'O+': { give: ['O+', 'A+', 'B+', 'AB+'], receive: ['O-', 'O+'], antigens: 'Rh', antibodies: 'Anti-A, B', bars: [30, 70] },
-            'A-': { give: ['A-', 'A+', 'AB-', 'AB+'], receive: ['O-', 'A-'], antigens: 'A', antibodies: 'Anti-B, Rh', bars: [40, 60] },
-            'A+': { give: ['A+', 'AB+'], receive: ['O-', 'O+', 'A-', 'A+'], antigens: 'A, Rh', antibodies: 'Anti-B', bars: [60, 40] },
-            'B-': { give: ['B-', 'B+', 'AB-', 'AB+'], receive: ['O-', 'B-'], antigens: 'B', antibodies: 'Anti-A, Rh', bars: [40, 60] },
-            'B+': { give: ['B+', 'AB+'], receive: ['O-', 'O+', 'B-', 'B+'], antigens: 'B, Rh', antibodies: 'Anti-A', bars: [60, 40] },
-            'AB-': { give: ['AB-', 'AB+'], receive: ['O-', 'A-', 'B-', 'AB-'], antigens: 'A, B', antibodies: 'Anti-Rh', bars: [75, 25] },
-            'AB+': { give: ['AB+'], receive: ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'], antigens: 'A, B, Rh', antibodies: 'None', bars: [95, 5] }
+            'O-': { give: ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'], receive: ['O-'], antigens: 'no', antibodies: 'Anti-A, Anti-B, and Anti-Rh' },
+            'O+': { give: ['O+', 'A+', 'B+', 'AB+'], receive: ['O-', 'O+'], antigens: 'Rh', antibodies: 'Anti-A and Anti-B' },
+            'A-': { give: ['A-', 'A+', 'AB-', 'AB+'], receive: ['O-', 'A-'], antigens: 'A', antibodies: 'Anti-B and Anti-Rh' },
+            'A+': { give: ['A+', 'AB+'], receive: ['O-', 'O+', 'A-', 'A+'], antigens: 'A and Rh', antibodies: 'Anti-B' },
+            'B-': { give: ['B-', 'B+', 'AB-', 'AB+'], receive: ['O-', 'B-'], antigens: 'B', antibodies: 'Anti-A and Anti-Rh' },
+            'B+': { give: ['B+', 'AB+'], receive: ['O-', 'O+', 'B-', 'B+'], antigens: 'B and Rh', antibodies: 'Anti-A' },
+            'AB-': { give: ['AB-', 'AB+'], receive: ['O-', 'A-', 'B-', 'AB-'], antigens: 'A and B', antibodies: 'Anti-Rh' },
+            'AB+': { give: ['AB+'], receive: ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'], antigens: 'A, B, and Rh', antibodies: 'no' }
         };
 
         const types = Object.keys(bloodData);
@@ -229,10 +166,10 @@
         function renderControls() {
             const grid = document.getElementById('bloodGrid');
             types.forEach(type => {
-                const btn = document.createElement('button');
-                btn.className = 'blood-card py-3 px-4 rounded-xl font-bold transition-all text-sm text-left flex justify-between items-center';
+                const btn = document.createElement('div');
+                btn.className = 'blood-card py-3 px-4 rounded-xl font-bold transition-all text-sm mb-2 flex justify-between items-center';
                 btn.id = `btn-${safe(type)}`;
-                btn.innerHTML = `${type} <span class="text-[8px] opacity-40">SELECT</span>`;
+                btn.innerHTML = `<span>${type}</span> <span class="text-[8px] opacity-30 mono">0${types.indexOf(type)+1}</span>`;
                 btn.onclick = () => select(type);
                 grid.appendChild(btn);
             });
@@ -243,53 +180,44 @@
             document.querySelectorAll('.blood-card').forEach(b => b.classList.remove('active'));
             document.getElementById(`btn-${safe(type)}`).classList.add('active');
 
-            // Hero Updates
-            document.getElementById('centerType').innerText = type;
-            document.getElementById('typeLabel').innerText = `Type ${expand(type)}`;
-            document.getElementById('antigenList').innerText = data.antigens;
-            document.getElementById('antibodyList').innerText = data.antibodies;
-            document.getElementById('antigenBar').style.width = data.bars[0] + '%';
-            document.getElementById('antibodyBar').style.width = data.bars[1] + '%';
+            // Update Labels
+            document.querySelectorAll('.selected-text-name').forEach(el => el.innerText = type);
+            document.getElementById('antigenDetail').innerText = data.antigens;
+            document.getElementById('antibodyDetail').innerText = data.antibodies;
 
-            const status = document.getElementById('typeStatus');
-            if (type === 'O-') status.innerText = 'Universal Donor';
-            else if (type === 'AB+') status.innerText = 'Universal Recipient';
-            else status.innerText = 'Specific Serology Profile';
-
-            // COMPATIBILITY GRIDS (More visible now)
-            updateGrid('giveToGrid', data.give, 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40');
-            updateGrid('receiveFromGrid', data.receive, 'bg-sky-500/20 text-sky-400 border-sky-500/40');
+            // Update Grids
+            updateCompDisplay('giveToGrid', data.give, 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40');
+            updateCompDisplay('receiveFromGrid', data.receive, 'bg-sky-500/20 text-sky-400 border-sky-500/40');
 
             updateMatrix(type);
         }
 
-        function updateGrid(id, compatibleList, classes) {
+        function updateCompDisplay(id, list, classes) {
             const container = document.getElementById(id);
             container.innerHTML = '';
             types.forEach(t => {
-                const isMatch = compatibleList.includes(t);
-                const pill = document.createElement('div');
-                pill.className = `status-pill text-[10px] font-black border transition-all duration-500 ${isMatch ? classes : 'border-white/5 text-slate-800 opacity-20 scale-75'}`;
-                pill.innerText = t;
-                container.appendChild(pill);
+                const isMatch = list.includes(t);
+                const box = document.createElement('div');
+                box.className = `comp-box h-10 border transition-all duration-300 ${isMatch ? classes : 'border-white/5 text-slate-800 opacity-20'}`;
+                box.innerText = t;
+                container.appendChild(box);
             });
         }
 
         function renderMatrix() {
             const head = document.getElementById('matrixHeader');
             const body = document.getElementById('matrixBody');
-            
-            types.forEach(t => head.innerHTML += `<th class="p-1">${t}</th>`);
+            types.forEach(t => head.innerHTML += `<th class="p-2 text-slate-600">${t}</th>`);
 
             types.forEach(recpt => {
                 const row = document.createElement('tr');
-                row.innerHTML = `<td class="font-bold text-slate-600 pr-2 py-1">${recpt}</td>`;
+                row.innerHTML = `<td class="font-bold text-slate-500 pr-4 py-2">${recpt}</td>`;
                 types.forEach(donor => {
                     const isOk = bloodData[donor].give.includes(recpt);
                     row.innerHTML += `
-                        <td class="text-center">
-                            <div id="cell-${safe(donor)}-${safe(recpt)}" class="flex items-center justify-center p-1">
-                                <div class="matrix-dot ${isOk ? 'bg-emerald-500/30' : 'bg-red-900/10'}"></div>
+                        <td class="text-center p-0">
+                            <div id="cell-${safe(donor)}-${safe(recpt)}" class="flex items-center justify-center h-8">
+                                <div class="matrix-dot ${isOk ? 'bg-emerald-500/30' : 'bg-red-900/20'}"></div>
                             </div>
                         </td>
                     `;
@@ -303,26 +231,26 @@
             document.querySelectorAll('.matrix-dot').forEach(d => {
                 d.style.transform = 'scale(1)';
                 d.style.boxShadow = 'none';
+                if(d.classList.contains('bg-emerald-500')) {
+                    d.classList.remove('bg-emerald-500');
+                    d.classList.add('bg-emerald-500/30');
+                }
             });
 
             types.forEach(recpt => {
                 const dot = document.querySelector(`#cell-${safeSel}-${safe(recpt)} .matrix-dot`);
                 if (dot) {
-                    dot.style.transform = 'scale(1.6)';
+                    dot.style.transform = 'scale(1.8)';
                     if (dot.classList.contains('bg-emerald-500/30')) {
-                        dot.style.boxShadow = '0 0 8px #10b981';
-                        dot.style.backgroundColor = '#10b981';
+                        dot.classList.remove('bg-emerald-500/30');
+                        dot.classList.add('bg-emerald-500');
+                        dot.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.6)';
                     }
                 }
             });
         }
 
         function safe(str) { return str.replace('+', 'pos').replace('-', 'neg'); }
-        function expand(str) { 
-            let res = str.includes('AB') ? 'AB' : (str.includes('A') ? 'A' : (str.includes('B') ? 'B' : 'O'));
-            res += str.includes('+') ? '-Positive' : '-Negative';
-            return res;
-        }
 
         window.onload = init;
     </script>
